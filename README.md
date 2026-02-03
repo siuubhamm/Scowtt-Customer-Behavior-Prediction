@@ -98,6 +98,7 @@ This structure allows systematic identification of missing data patterns, outlie
 - Expected null patterns were observed:
   - Order timestamps vary by order status.
   - Not all orders receive reviews.
+- The number of customers who have done more than one purchase ar ~3%, indicating a class imbalance.
 
 All such cases were handled explicitly during feature engineering.
 
@@ -106,6 +107,7 @@ All such cases were handled explicitly during feature engineering.
 ## Feature Engineering
 
 - **98 customer-level features** were engineered.
+- Detail about all the features is present in the [Feature Engineering File](Feature%20Engineering.xlsx)
 - Feature categories include:
   - Purchase frequency and recency
   - Payment behavior
