@@ -1,5 +1,9 @@
-numpy
 pandas
-xlsxwriter
+numpy
+scikit-learn
+xgboost
+torch
 matplotlib
 seaborn
+xlsxwriter
+joblib

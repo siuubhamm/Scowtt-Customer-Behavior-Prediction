@@ -295,6 +295,9 @@ A **two-stage modeling framework** was adopted.
 - Target values were log-transformed to handle heavy skew.
 - **Metrics:** MAE and RMSE (reported on original value scale).
 
+The Model Pipeline is shown below:
+![Model Pipeline](Model%20Training%20Pipeline.png)
+
 ---
 
 ## Key Results
@@ -311,6 +314,9 @@ A **two-stage modeling framework** was adopted.
 | Neural Network (MLP) | 2 hidden layers, dropout=0.2, Adam (lr=1e-3) | ~0.01–0.03 |
 
 **Metric:** PR-AUC (chosen due to extreme class imbalance)
+
+The PR-AUC for all the models is as shown below
+![PR AUC](Reports/pr_auc_curves.png)
 
 ---
 
@@ -333,12 +339,129 @@ A **two-stage modeling framework** was adopted.
 
 ---
 
+## Model Analysis – Conversion Propensity
+
+### Top Features by Importance
+
+The table below lists the most influential features identified by the best-performing classification model, ranked by relative importance.
+
+| Rank | Feature | Importance |
+|------|--------|------------|
+| 1 | tot_pymt_sqntl | 0.1072 |
+| 2 | num_products | 0.0975 |
+| 3 | num_rev_delivered | 0.0772 |
+| 4 | tot_pymt_boleto | 0.0755 |
+| 5 | tot_order_freight_value | 0.0748 |
+| 6 | tot_pymt_val | 0.0730 |
+| 7 | avg_rev_title_length | 0.0686 |
+| 8 | avg_rev_score | 0.0658 |
+| 9 | avg_pymt_instllmnt | 0.0657 |
+| 10 | avg_rev_length | 0.0641 |
+| 11 | days_since_lst_rev_creation | 0.0615 |
+| 12 | avg_order_size | 0.0599 |
+| 13 | tot_pymt_val_canceled | 0.0570 |
+| 14 | tot_pymt_voucher | 0.0523 |
+
+---
+
+### Interpretation and Insights
+
+- **Payment behavior features** (total payment value, payment sequence, installments, and payment type splits) dominate the ranking, indicating that how a customer pays is a strong signal of future purchase intent.
+- **Engagement-related features**, such as review counts and review text characteristics, are highly predictive, suggesting that post-purchase interaction correlates with repeat purchasing.
+- **Order composition features** (number of products, average order size, freight value) capture the depth and complexity of prior transactions, which helps distinguish casual buyers from committed customers.
+- **Recency-related signals**, especially around reviews, remain important, reinforcing that recent engagement is a key driver of near-term conversion.
+- Overall, the importance distribution confirms that **conversion propensity is driven more by behavioral and transactional patterns than by static customer attributes**, aligning with expectations for repeat-purchase prediction.
+
+---
+
+## Model Analysis – Order Value Prediction
+
+### Top Features by Importance
+
+The table below shows the most influential features for the best-performing **order value regression model**, ranked by relative importance.
+
+| Rank | Feature | Importance |
+|------|--------|------------|
+| 1 | tot_pymt_val | 0.8545 |
+| 2 | num_products | 0.0557 |
+| 3 | tot_order_freight_value | 0.0545 |
+| 4 | tot_pymt_boleto | 0.0155 |
+| 5 | avg_pymt_instllmnt | 0.0083 |
+| 6 | num_rev_delivered | 0.0036 |
+| 7 | days_since_lst_rev_creation | 0.0025 |
+| 8 | tot_pymt_sqntl | 0.0020 |
+| 9 | avg_rev_length | 0.0010 |
+| 10 | avg_order_size | 0.0007 |
+
+---
+
+### Interpretation and Insights
+
+- **Total historical payment value** overwhelmingly dominates the model, indicating strong persistence in customer spending behavior over time.
+- **Order composition features**, such as the number of products and freight value, play a secondary but meaningful role by capturing basket size and logistics-related costs.
+- **Payment structure variables** (installments and boleto usage) contribute modestly, reflecting differences in purchasing capacity and payment preferences.
+- **Engagement-related features**, including reviews and their recency, have limited direct impact on monetary value compared to their role in conversion propensity.
+- Overall, the results suggest that **order value is primarily driven by historical spend magnitude**, while behavioral signals act as fine-grained refinements rather than primary drivers.
+- These findings contrast with the propensity model, where engagement and recency signals dominate, highlighting the complementary nature of the two-stage modeling framework.
+
+---
+
 ## Key Takeaways
 
 - Customer purchase behavior is **highly non-linear** and temporally sensitive.
 - Feature engineering and correct time alignment are more impactful than model complexity alone.
 - A two-stage **propensity × value** framework provides a principled way to estimate expected customer value.
 
+---
+
+## Repository Structure
+
+The repository is organized to clearly separate data processing, feature engineering, modeling, and evaluation steps.
+
+## Repository Structure
+
+```text
+Scowtt-Customer_Behavior-Prediction/
+├── Data/
+│   ├── processed/
+│   └── raw/
+├── Models/
+│   ├── Order Value/
+│   └── Purchase Propensity/
+├── Notebooks/
+│   ├── data_processing/
+│   └── model/
+├── Reports/
+│   └── didq_report.xlsx
+├── .gitignore
+├── Data Model.png
+├── Feature Engineering.xlsx
+├── Model Training Pipeline.png
+├── pr_auc_curves.png
+├── README.md
+└── requirements.txt
+```
+
+### How to Run the Notebooks
+
+### 1. Environment Setup
+
+Create a Python environment and install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Runningn the Notebooks
+To ensure the data pipeline runs correctly, follow the steps below in the specified order:
+
+- Data Processing Pipeline Navigate to Notebooks/data_processing/ and execute these
+  - data_check.ipynb: Validates the source files in Data/raw/.
+  - feature_engineering.ipynb: Constructs the final analytical dataset (Customer Snapshots).
+
+- Model Training & Evaluation Navigate to Notebooks/model/ and execute these notebooks:
+  - feature_selection.ipynb: Runs feature selection script to get the features required for modeling.
+  - training.ipynb: Trains classification for customer purchase propensity and regression models for expected order value (saved to Models/Order Value/).
 ---
 
 ## Future Work
@@ -351,6 +474,10 @@ A **two-stage modeling framework** was adopted.
 
 ---
 
-## Notes
+## Use of AI in Project Development
 
-This project emphasizes **correct temporal modeling**, **leakage prevention**, and **interpretability**, making it suitable for real-world deployment and business decision-making.
+- AI tools were used to speedy development of pipelines once the codes and models were tested independently.
+- AI tools were used to debug and optimize modeling pipelines.
+- Documentation and reporting, including the README.
+
+---
