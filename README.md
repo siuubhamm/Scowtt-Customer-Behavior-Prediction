@@ -438,7 +438,7 @@ Create a Python environment and install dependencies:
 pip install -r requirements.txt
 ```
 
-### 2. Runningn the Notebooks
+### 2. Running the Notebooks
 To ensure the data pipeline runs correctly, follow the steps below in the specified order:
 
 - Data Processing Pipeline Navigate to Notebooks/data_processing/ and execute these
