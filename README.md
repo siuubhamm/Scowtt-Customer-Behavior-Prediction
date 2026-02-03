@@ -49,7 +49,7 @@ To enable customer-level modeling, all relevant datasets were aggregated into a 
 The flow of data is as per the Data Model shown here:
 ![Data Model](Data%20Model.png)
 
-The arrows show the flow of feature and overlapt percentage between the tables being joined.
+The arrows show the flow of feature and overlap percentage between the tables being joined.
 
 
 ### Excluded Tables
@@ -65,7 +65,7 @@ The following datasets were excluded from modeling due to limited relevance to c
 
 A full **Data Integrity and Data Quality (DIDQ)** analysis was performed across all datasets.  
 The full report is available here:
-[Data Integrity and Data Quality (DIDQ) Report](Reports/didq_report.xls)
+[Data Integrity and Data Quality (DIDQ) Report](Reports/didq_report.xlsx)
 
 ### DIDQ Report Structure
 
@@ -308,10 +308,10 @@ The Model Pipeline is shown below:
 
 | Model | Best Hyperparameters | Validation PR-AUC |
 |------|----------------------|------------------|
-| Logistic Regression | C=1.0, penalty=l1, class_weight=balanced | 0.0128 |
+| Logistic Regression | C=0.1, penalty=none, class_weight=none | 0.0135 |
 | Random Forest Classifier | n_estimators=500, max_depth=5, min_samples_leaf=1 | 0.0182 |
 | XGBoost Classifier | n_estimators=100, learning_rate=0.05, max_depth=3, subsample=0.8, colsample_bytree=1.0 | 0.0684 |
-| Neural Network (MLP) | 2 hidden layers, dropout=0.2, Adam (lr=1e-3) | ~0.01–0.03 |
+| Neural Network (MLP) | 3 hidden layers, dropout=0.2, Adam (lr=1e-3) | ~0.01–0.03 |
 
 **Metric:** PR-AUC (chosen due to extreme class imbalance)
 
@@ -324,9 +324,9 @@ The PR-AUC for all the models is as shown below
 
 | Model | Best Hyperparameters | MAE | RMSE |
 |------|----------------------|-----|------|
-| Ridge Regression | alpha=10.0 | 40282.20 | 598085.32 |
-| Random Forest Regressor | n_estimators=300, max_depth=None, min_samples_leaf=5, max_features=0.7 | 17.17 | 143.74 |
-| XGBoost Regressor | n_estimators=800, learning_rate=0.03, max_depth=5, subsample=0.8, colsample_bytree=0.8 | 23.21 | 173.66 |
+| Ridge Regression | alpha=0.1 | 41789.544 | 620875.017 |
+| Random Forest Regressor | n_estimators=300, max_depth=None, min_samples_leaf=5, max_features=0.7 | 16.903 | 142.445 |
+| XGBoost Regressor | n_estimators=800, learning_rate=0.03, max_depth=5, subsample=0.8, colsample_bytree=0.8 | 23.034 | 173.334 |
 
 **Metric:** MAE and RMSE (evaluated on original value scale after inverse log transform)
 
