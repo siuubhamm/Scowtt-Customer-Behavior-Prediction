@@ -7,15 +7,12 @@ This project focuses on modeling **customer purchasing behavior** on an e-commer
 1. **Conversion Propensity** – the probability that a customer will place an order in a future time window.
 2. **Order Value** – the expected monetary value of a customer’s order.
 
-Together, these models enable expected value–based customer ranking, which can be used for marketing prioritization, targeting and revenue optimization.
-
 ---
 
 ## Objectives
 
 - Predict the probability of a customer placing an order within a specified future horizon (e.g., 90 days).
 - Predict the **average order value** for customers who convert.
-- Combine both stages to estimate **expected customer value**.
 
 ---
 
@@ -100,7 +97,7 @@ This structure allows systematic identification of missing data patterns, outlie
   - Not all orders receive reviews.
 - The number of customers who have done more than one purchase ar ~3%, indicating a class imbalance.
 
-All such cases were handled explicitly during feature engineering.
+All such cases were handled explicitly during modeling phase.
 
 ---
 
@@ -123,8 +120,6 @@ These features capture **how often** a customer interacts with the platform.
 **Aggregation logic:**  
 Counts are computed by aggregating order- and item-level records grouped by `customer_unique_id` and time window.
 
----
-
 ### 2. Monetary (Total / Aggregate) Features
 These features quantify **how much** a customer spends or pays through different channels.
 
@@ -135,8 +130,6 @@ These features quantify **how much** a customer spends or pays through different
 
 **Aggregation logic:**  
 Monetary values are summed over all relevant transactions for a customer within the aggregation period.
-
----
 
 ### 3. Pivoted Status-Based Features
 These features capture **order lifecycle behavior** by splitting aggregates across different order states.
@@ -149,8 +142,6 @@ These features capture **order lifecycle behavior** by splitting aggregates acro
 **Aggregation logic:**  
 Order-level metrics are first grouped by `(customer_unique_id, order_status)` and then pivoted into separate columns per status.
 
----
-
 ### 4. Recency and Temporal Features
 These features describe **how recently** a customer interacted with the platform.
 
@@ -161,8 +152,6 @@ These features describe **how recently** a customer interacted with the platform
 **Aggregation logic:**  
 Recency is calculated as the difference between the snapshot date and the most recent relevant timestamp per customer.
 
----
-
 ### 5. Preference-Based Features
 These features summarize **customer preferences** inferred from historical behavior.
 
@@ -172,8 +161,6 @@ These features summarize **customer preferences** inferred from historical behav
 
 **Aggregation logic:**  
 Preferences are derived using **mode-based aggregation**, selecting the most frequently occurring value per customer.
-
----
 
 ### 6. Ratio and Average Features
 These features normalize totals to reflect **behavioral intensity** rather than scale.
@@ -186,7 +173,6 @@ These features normalize totals to reflect **behavioral intensity** rather than 
 **Aggregation logic:**  
 Computed as ratios of aggregated totals (e.g., total value divided by number of orders).
 
----
 
 Together, these feature groups provide a comprehensive representation of customer behavior across frequency, monetary value, recency, lifecycle dynamics and preferences, forming the foundation for both propensity and order value modeling.
 
