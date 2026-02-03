@@ -106,17 +106,89 @@ All such cases were handled explicitly during feature engineering.
 
 ## Feature Engineering
 
-- **98 customer-level features** were engineered.
-- Detail about all the features is present in the [Feature Engineering File](Feature%20Engineering.xlsx)
-- Feature categories include:
-  - Purchase frequency and recency
-  - Payment behavior
-  - Order value aggregates
-  - Review statistics
-  - Product and seller diversity
-- Features become progressively richer as data is aggregated upward through the schema.
+A diverse set of customer-level features was engineered to capture historical behavior, spending patterns, and preferences.  
+Features were derived through systematic aggregation of lower-level transactional data and can be broadly categorized as follows.
 
-A complete list of features, source tables, and aggregation logic is documented in the **Feature Engineering Sheet**.
+**Detailed documentation for every engineered feature — including source tables, aggregation logic, and definitions — is available in the  
+[Feature Engineering File](Feature%20Engineering.xlsx).**
+
+### 1. Count-Based (Numerical) Features
+These features capture **how often** a customer interacts with the platform.
+
+- Number of orders placed
+- Number of products purchased
+- Number of sellers interacted with
+- Number of reviews submitted
+
+**Aggregation logic:**  
+Counts are computed by aggregating order- and item-level records grouped by `customer_unique_id` and time window.
+
+---
+
+### 2. Monetary (Total / Aggregate) Features
+These features quantify **how much** a customer spends or pays through different channels.
+
+- Total order value
+- Total payment value
+- Payment value split by payment type (credit card, boleto, voucher, etc.)
+- Total freight cost
+
+**Aggregation logic:**  
+Monetary values are summed over all relevant transactions for a customer within the aggregation period.
+
+---
+
+### 3. Pivoted Status-Based Features
+These features capture **order lifecycle behavior** by splitting aggregates across different order states.
+
+- Number of orders by status (approved, shipped, delivered, canceled, etc.)
+- Total order value by status
+- Total freight value by status
+- Average order size by status
+
+**Aggregation logic:**  
+Order-level metrics are first grouped by `(customer_unique_id, order_status)` and then pivoted into separate columns per status.
+
+---
+
+### 4. Recency and Temporal Features
+These features describe **how recently** a customer interacted with the platform.
+
+- Days since last order purchased
+- Days since last order shipped
+- Days since last review created
+
+**Aggregation logic:**  
+Recency is calculated as the difference between the snapshot date and the most recent relevant timestamp per customer.
+
+---
+
+### 5. Preference-Based Features
+These features summarize **customer preferences** inferred from historical behavior.
+
+- Preferred product category
+- Preferred product category (English mapping)
+- Most frequent payment method
+
+**Aggregation logic:**  
+Preferences are derived using **mode-based aggregation**, selecting the most frequently occurring value per customer.
+
+---
+
+### 6. Ratio and Average Features
+These features normalize totals to reflect **behavioral intensity** rather than scale.
+
+- Average order size
+- Average order price
+- Average freight value
+- Average review score
+
+**Aggregation logic:**  
+Computed as ratios of aggregated totals (e.g., total value divided by number of orders).
+
+---
+
+Together, these feature groups provide a comprehensive representation of customer behavior across frequency, monetary value, recency, lifecycle dynamics and preferences, forming the foundation for both propensity and order value modeling.
 
 ---
 
@@ -134,6 +206,68 @@ To improve stability and interpretability:
 - Pairwise Pearson correlation was computed across numeric features.
 - A threshold of **0.7** was applied.
 - One feature from each highly correlated pair was removed prior to modeling.
+
+---
+
+## Label Creation
+
+To ensure realistic and leakage-free modeling, both propensity and order value labels are created using a **future-looking time horizon** relative to a fixed snapshot date.
+
+### Snapshot and Horizon Definition
+
+- A **snapshot date** is defined for each modeling run (e.g., end of a given month).
+- A fixed **prediction horizon** of 90 days is used.
+- Only information available **on or before the snapshot date** is used for feature computation.
+- Labels are derived strictly from customer activity **after the snapshot date and within the horizon window**.
+
+---
+
+### 1. Conversion Propensity Label
+
+The propensity label indicates whether a customer places **at least one order** within the future prediction horizon.
+
+**Label definition:**
+
+- `y_propensity = 1`  
+  If the customer places one or more orders within the next 90 days after the snapshot date.
+- `y_propensity = 0`  
+  Otherwise.
+
+**Computation logic:**
+
+- Orders are filtered to those with purchase timestamps:
+  - greater than the snapshot date, and
+  - less than or equal to snapshot date + 90 days.
+- Orders are mapped to customers using `customer_id → customer_unique_id`.
+- A binary indicator is created per customer based on the presence of at least one order in the horizon.
+
+This formulation captures **future purchase intent**, not historical frequency.
+
+---
+
+### 2. Order Value Label
+
+The order value label represents the **monetary value of customer purchases** within the future horizon, conditional on conversion.
+
+**Label definition:**
+
+- `y_value` is defined as the **average order value** generated by a customer within the prediction horizon.
+- For modeling stability, the target is log-transformed:
+  ```text
+  y_value_log = log(1 + y_value)
+
+### Computation logic:
+
+Item-level aggregation
+
+From the **olist_order_items_dataset**, item-level price and freight_value are summed.
+
+These values are first aggregated at the order_id level, producing a total order value per order.
+
+Order-level values are joined with the orders dataset to associate orders with customers.
+
+All orders placed by a customer within the future horizon are aggregated at the
+**customer_unique_id** level (sum or average, depending on modeling objective).
 
 ---
 
@@ -163,7 +297,34 @@ A **two-stage modeling framework** was adopted.
 
 ---
 
-## Key Results (High-Level)
+## Key Results
+
+## Modeling Results
+
+### Stage 1: Conversion Propensity (Classification)
+
+| Model | Best Hyperparameters | Validation PR-AUC |
+|------|----------------------|------------------|
+| Logistic Regression | C=1.0, penalty=l1, class_weight=balanced | 0.0128 |
+| Random Forest Classifier | n_estimators=500, max_depth=5, min_samples_leaf=1 | 0.0182 |
+| XGBoost Classifier | n_estimators=100, learning_rate=0.05, max_depth=3, subsample=0.8, colsample_bytree=1.0 | 0.0684 |
+| Neural Network (MLP) | 2 hidden layers, dropout=0.2, Adam (lr=1e-3) | ~0.01–0.03 |
+
+**Metric:** PR-AUC (chosen due to extreme class imbalance)
+
+---
+
+### Stage 2: Order Value Prediction (Regression)
+
+| Model | Best Hyperparameters | MAE | RMSE |
+|------|----------------------|-----|------|
+| Ridge Regression | alpha=10.0 | 40282.20 | 598085.32 |
+| Random Forest Regressor | n_estimators=300, max_depth=None, min_samples_leaf=5, max_features=0.7 | 17.17 | 143.74 |
+| XGBoost Regressor | n_estimators=800, learning_rate=0.03, max_depth=5, subsample=0.8, colsample_bytree=0.8 | 23.21 | 173.66 |
+
+**Metric:** MAE and RMSE (evaluated on original value scale after inverse log transform)
+
+**Key Insights**:
 
 - Linear models perform poorly for both propensity and value prediction.
 - Tree-based models capture non-linear effects and perform substantially better.
